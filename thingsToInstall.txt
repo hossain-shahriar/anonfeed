@@ -1,0 +1,4 @@
+npm i mongoose
+npm i zod
+npm install resend
+npm i react-email

@@ -1,0 +1,2 @@
+MONGODB_URI="mongodb+srv://hossain-shahriar:NujhatShahriar2002@cluster0.lwg4tsh.mongodb.net/"
+RESEND_API_KEY="re_Srd9qveh_AmikFPf1PxJakCTKG459bC9P"
