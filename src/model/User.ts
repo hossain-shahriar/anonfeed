@@ -29,8 +29,6 @@ const UserSchema: Schema<User> = new Schema({
     password: { 
         type: String,
         required: [true, "Password is required"],
-        minlength: [8, "Password must be at least 8 characters long"],
-        maxlength: [32, "Password must be at most 32 characters long"]
     },
     verifyCode: { 
         type: String, 

@@ -2,3 +2,10 @@ npm i mongoose
 npm i zod
 npm install resend
 npm i react-email
+npm i bcryptjs
+npm i --save-dev @types/bcryptjs
+npm install next-auth
+npm install jsonwebtoken
+npm install nodemailer
+npm i --save-dev @types/nodemailer
+npm install dotenv
