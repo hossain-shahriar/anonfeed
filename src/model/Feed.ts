@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
-import UserModel, { IUser } from "./User";
 
 export interface IFeed extends Document {
+    _id: mongoose.Types.ObjectId;
     title: string;
     description: string;
     createdAt: Date;

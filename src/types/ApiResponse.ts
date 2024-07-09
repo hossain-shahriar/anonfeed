@@ -1,7 +1,8 @@
-import { Todo } from '../model/Feed';
+import { IFeed } from '../model/Feed';
 
 export interface ApiResponse {
     success: boolean;
     message: string;
-    todos?: Array<Todo>
+    feeds?: Array<IFeed>;
+    isAccepting?: boolean;
 }

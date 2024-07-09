@@ -9,3 +9,18 @@ npm install jsonwebtoken
 npm install nodemailer
 npm i --save-dev @types/nodemailer
 npm install dotenv
+npm install ai openai
+npx shadcn-ui@latest init
+npx shadcn-ui@latest add form
+npm i axios
+npm install usehooks-ts
+npx shadcn-ui@latest add toast
+npx shadcn-ui@latest add input
+npx shadcn-ui@latest add card
+npx shadcn-ui@latest add alert-dialog
+npm install dayjs
+npx shadcn-ui@latest add separator
+npx shadcn-ui@latest add switch
+npx shadcn-ui@latest add carousel
+npm install embla-carousel-react --save
+npm i embla-carousel-autoplay
