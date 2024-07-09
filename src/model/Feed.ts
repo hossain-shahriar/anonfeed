@@ -1,15 +1,13 @@
-import mongoose, {Schema, Document} from "mongoose";
-import { User } from "./User";
+import mongoose, { Schema, Document } from "mongoose";
+import UserModel, { IUser } from "./User";
 
-export interface Feed extends Document {
+export interface IFeed extends Document {
     title: string;
     description: string;
     createdAt: Date;
-    completed: boolean;
-    user: User
 }
 
-const FeedSchema: Schema<Feed> = new Schema({
+const FeedSchema: Schema<IFeed> = new Schema({
     title: {
         type: String,
         required: [true, "Title is required"],
@@ -21,14 +19,9 @@ const FeedSchema: Schema<Feed> = new Schema({
     createdAt: {
         type: Date,
         default: Date.now
-    },
-    completed: {
-        type: Boolean,
-        default: false
-    },
-    user: { type: Schema.Types.ObjectId, ref: "User" }
+    }
 });
 
-const Feed = (mongoose.models.Feed as mongoose.Model<Feed>) || mongoose.model<Feed>("Feed", FeedSchema);
+const FeedModel = (mongoose.models.Feed as mongoose.Model<IFeed>) || mongoose.model<IFeed>("Feed", FeedSchema);
 
-export default Feed;
+export default FeedModel;

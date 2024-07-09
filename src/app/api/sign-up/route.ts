@@ -1,8 +1,6 @@
 import dbConnect from "@/lib/dbConnect";
-import User from "@/model/User";
-// import Todo from "@/model/Todo";
+import UserModel from "@/model/User";
 import bcrypt from "bcryptjs";
-
 import { sendVerificationEmail } from "@/helpers/sendVerificationEmail";
 
 export async function POST(request: Request) {
@@ -10,9 +8,9 @@ export async function POST(request: Request) {
 
     try {
         const {username, email, password} = await request.json();
-        const existingUserVerifiedByUsername = await User.findOne({
+        const existingUserVerifiedByUsername = await UserModel.findOne({
             username,
-            isVerified: true
+            verified: true
         })
         
         if (existingUserVerifiedByUsername) {
@@ -27,8 +25,7 @@ export async function POST(request: Request) {
             )
         }
 
-        const existingUserByEmail = await User.findOne
-        ({email})
+        const existingUserByEmail = await UserModel.findOne({ email })
 
         const verifyCode = Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -43,30 +40,31 @@ export async function POST(request: Request) {
                         status: 400
                     }
                 )
-            }
-            else {
+            } else {
                 const hashedPassword = await bcrypt.hash(password, 10);
                 existingUserByEmail.password = hashedPassword;
                 existingUserByEmail.verifyCode = verifyCode;
                 existingUserByEmail.verifyCodeExpiry = new Date(Date.now() + 3600000);
                 await existingUserByEmail.save();
             }
-        }else {
+        } else {
             const hashedPassword = await bcrypt.hash(password, 10);
             const expiryDate = new Date();
             expiryDate.setHours(expiryDate.getHours() + 1);
 
-            const newUser = new User({
+            const newUser = new UserModel({
                 username,
                 email,
                 password: hashedPassword,
                 verifyCode,
                 verifyCodeExpiry: expiryDate,
                 verified: false,
+                isAccepting: true,
+                isPublic: true,
                 following: [],
                 followers: [],
-                todos: [],
-        })
+                feeds: [],
+            })
             await newUser.save();
         }
 

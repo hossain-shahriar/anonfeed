@@ -1,5 +1,5 @@
 import dbConnect from "@/lib/dbConnect";
-import User from "@/model/User";
+import UserModel from "@/model/User";
 import { z } from "zod";
 import { usernameValidation } from "@/schemas/signUpSchema";
 
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
 
         const { username } = result.data;
 
-        const existingVerifiedUser = await User.findOne
+        const existingVerifiedUser = await UserModel.findOne
         ({ username, verified: true });
 
         if (existingVerifiedUser) {
@@ -39,7 +39,7 @@ export async function GET(request: Request) {
         }
 
         return Response.json({ success: true, message: "Username is unique" },
-            { status: 409 }
+            { status: 200 }
         )
 
     } catch (error) {
