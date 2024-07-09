@@ -1,6 +1,6 @@
 import {z} from 'zod';
 
-export const todoSchema = z.object({
+export const feedSchema = z.object({
     content: z
     .string()
     .min(10, "Content must be atleast 10 character")

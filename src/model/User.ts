@@ -1,5 +1,5 @@
 import mongoose, {Schema, Document} from "mongoose";
-import { Todo } from "./Todo";
+import { Feed } from "./Feed";
 
 export interface User extends Document {
     username: string;
@@ -10,7 +10,7 @@ export interface User extends Document {
     verified: boolean;
     following: User[];
     followers: User[];
-    todos: Todo[];
+    feeds: Feed[];
 }
 
 const UserSchema: Schema<User> = new Schema({
@@ -44,7 +44,7 @@ const UserSchema: Schema<User> = new Schema({
     },
     following: [{ type: Schema.Types.ObjectId, ref: "User" }],
     followers: [{ type: Schema.Types.ObjectId, ref: "User" }],
-    todos: [{ type: Schema.Types.ObjectId, ref: "Todo" }],
+    feeds: [{ type: Schema.Types.ObjectId, ref: "Feed" }],
 });
 
 const User = (mongoose.models.User as mongoose.Model<User>) || mongoose.model<User>("User", UserSchema)

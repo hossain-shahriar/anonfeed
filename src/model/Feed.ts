@@ -1,7 +1,7 @@
 import mongoose, {Schema, Document} from "mongoose";
 import { User } from "./User";
 
-export interface Todo extends Document {
+export interface Feed extends Document {
     title: string;
     description: string;
     createdAt: Date;
@@ -9,7 +9,7 @@ export interface Todo extends Document {
     user: User
 }
 
-const TodoSchema: Schema<Todo> = new Schema({
+const FeedSchema: Schema<Feed> = new Schema({
     title: {
         type: String,
         required: [true, "Title is required"],
@@ -29,6 +29,6 @@ const TodoSchema: Schema<Todo> = new Schema({
     user: { type: Schema.Types.ObjectId, ref: "User" }
 });
 
-const Todo = (mongoose.models.Todo as mongoose.Model<Todo>) || mongoose.model<Todo>("Todo", TodoSchema);
+const Feed = (mongoose.models.Feed as mongoose.Model<Feed>) || mongoose.model<Feed>("Feed", FeedSchema);
 
-export default Todo;
+export default Feed;

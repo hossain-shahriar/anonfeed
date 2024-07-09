@@ -50,7 +50,7 @@ export async function sendVerificationEmail(
 
     // Define the email options
     const mailOptions = {
-        from: `Todogather <${process.env.NODEMAILER_USER}>`, // sender address
+        from: `Anonfeed <${process.env.NODEMAILER_USER}>`, // sender address
         to: email, // receiver address
         subject: "Verify your account", // Subject line
         text: `Hello ${username},\n\nThank you for registering with us. Please use the following verification code to verify your account: ${verifyCode}\n\nIf you did not register with us, please ignore this email.`, // plain text body
