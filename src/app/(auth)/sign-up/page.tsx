@@ -103,9 +103,9 @@ const page = () => {
       <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md">
         <div className="text-center">
         <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl mb-6">
-          Join Mystery Message
+          Join AnonFeed
         </h1>
-        <p className="mb-4">Sign up to start your anonymous adventure</p>
+        <p className="mb-4">Sign up to start your anonymous feedback / message adventure</p>
         </div>
           <Form {...form}>
             <form

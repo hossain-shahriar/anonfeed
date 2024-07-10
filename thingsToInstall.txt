@@ -1,3 +1,4 @@
+sudo apt install npm
 npm i mongoose
 npm i zod
 npm install resend
@@ -24,3 +25,4 @@ npx shadcn-ui@latest add switch
 npx shadcn-ui@latest add carousel
 npm install embla-carousel-react --save
 npm i embla-carousel-autoplay
+npx shadcn-ui@latest add textarea

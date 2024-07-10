@@ -33,15 +33,24 @@ export async function DELETE(
     }
 
     // Remove the feed reference from the user's feeds array
-    await UserModel.updateOne(
-      { _id: _user._id },
+    // Update the user document to remove the feed reference
+    const updatedResult = await UserModel.updateOne(
+      { _id: _user._id, feeds: feedId },
       { $pull: { feeds: feedId } }
     );
+
+    if (updatedResult.modifiedCount === 0) {
+      return new Response(
+        JSON.stringify({ message: 'Feed not found or already deleted', success: false }),
+        { status: 404 }
+      );
+    }
 
     return new Response(
       JSON.stringify({ message: 'Feed deleted', success: true }),
       { status: 200 }
     );
+    
   } catch (error) {
     console.error('Error deleting feed:', error);
     return new Response(
