@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
+import { IFeed } from './Feed'; // Ensure Feed is imported
 
 export interface IUser extends Document {
     username: string;
@@ -11,7 +12,7 @@ export interface IUser extends Document {
     isPublic: boolean;
     following: IUser[];
     followers: IUser[];
-    feeds: mongoose.Types.ObjectId[]; // Changed to ObjectId to avoid circular dependency
+    feeds: mongoose.Types.ObjectId[];
 }
 
 const UserSchema: Schema<IUser> = new Schema({

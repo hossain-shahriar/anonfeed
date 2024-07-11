@@ -1,3 +1,4 @@
+// src/components/FeedCard.tsx
 'use client'
 
 import React from 'react';
@@ -23,7 +24,7 @@ import { ApiResponse } from '@/types/ApiResponse';
 
 type FeedCardProps = {
   feed: IFeed;
-  onFeedDelete: (feedId: string) => void;
+  onFeedDelete?: (feedId: string) => void; // Make it optional
 };
 
 const FeedCard = ({ feed, onFeedDelete }: FeedCardProps) => {
@@ -37,7 +38,9 @@ const FeedCard = ({ feed, onFeedDelete }: FeedCardProps) => {
       toast({
         title: response.data.message,
       });
-      onFeedDelete(feed._id.toString());
+      if (onFeedDelete) {
+        onFeedDelete(feed._id.toString());
+      }
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse>;
       toast({
@@ -54,30 +57,32 @@ const FeedCard = ({ feed, onFeedDelete }: FeedCardProps) => {
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle>{feed.title}</CardTitle>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant='destructive'>
-                <X className="w-5 h-5" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete
-                  this feed.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>
-                  Cancel
-                </AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteConfirm}>
-                  Continue
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          {onFeedDelete && ( // Only show the delete button if onFeedDelete is provided
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant='destructive'>
+                  <X className="w-5 h-5" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete
+                    this feed.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteConfirm}>
+                    Continue
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
         <div className="text-sm">
           {dayjs(feed.createdAt).format('MMM D, YYYY h:mm A')}
