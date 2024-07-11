@@ -10,8 +10,8 @@ export interface IUser extends Document {
     verified: boolean;
     isAccepting: boolean;
     isPublic: boolean;
-    following: IUser[];
-    followers: IUser[];
+    following: mongoose.Types.ObjectId[];
+    followers: mongoose.Types.ObjectId[];
     feeds: mongoose.Types.ObjectId[];
 }
 

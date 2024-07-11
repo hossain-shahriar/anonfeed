@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import UserModel from '@/model/User';
 import { getServerSession } from 'next-auth';
-import { authOptions } from "../../auth/[...nextauth]/options";
+import { authOptions } from '../../auth/[...nextauth]/options';
+import mongoose from 'mongoose';
 
 export async function GET(request: NextRequest, { params }: { params: { username: string } }) {
     try {
@@ -19,6 +20,26 @@ export async function GET(request: NextRequest, { params }: { params: { username
 
         const { username } = params;
         console.log(`Fetching feeds for user: ${username}`);
+
+        const loggedInUserId = new mongoose.Types.ObjectId(session.user._id);
+
+        const profileUser = await UserModel.findOne({ username });
+        if (!profileUser) {
+            return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });
+        }
+
+        const profileUserId = new mongoose.Types.ObjectId(profileUser._id as mongoose.Types.ObjectId);
+
+        const loggedInUser = await UserModel.findById(loggedInUserId);
+        if (!loggedInUser) {
+            return NextResponse.json({ success: false, message: "Logged-in user not found" }, { status: 404 });
+        }
+
+        const isFollowing = loggedInUser.following.some(followingId => followingId.equals(profileUserId));
+
+        if (!isFollowing) {
+            return NextResponse.json({ success: false, message: "You are not following this user" }, { status: 403 });
+        }
 
         const userFeeds = await UserModel.aggregate([
             { $match: { username: username } },
