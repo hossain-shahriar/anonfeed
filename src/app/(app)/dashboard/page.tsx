@@ -1,3 +1,4 @@
+// src/app/(app)/dashboard/page.tsx
 'use client';
 
 import FeedCard from '@/components/FeedCard';
@@ -9,17 +10,20 @@ import { IFeed } from '@/model/Feed';
 import { ApiResponse } from '@/types/ApiResponse';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios, { AxiosError } from 'axios';
-import { Loader2, RefreshCcw } from 'lucide-react';
+import { Loader2, RefreshCcw, Trash2 } from 'lucide-react';
 import { User } from 'next-auth';
 import { useSession } from 'next-auth/react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { acceptFeedSchema } from '@/schemas/acceptFeedSchema';
+import { CldUploadWidget } from 'next-cloudinary';
 
 function UserDashboard() {
   const [feeds, setFeeds] = useState<IFeed[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSwitchLoading, setIsSwitchLoading] = useState(false);
+  const [profilePhoto, setProfilePhoto] = useState('');
+  const [profilePhotoPublicId, setProfilePhotoPublicId] = useState('');
 
   const { toast } = useToast();
 
@@ -84,14 +88,30 @@ function UserDashboard() {
     [setIsLoading, setFeeds, toast]
   );
 
+  const fetchProfilePhoto = useCallback(async () => {
+    try {
+      const response = await axios.post('/api/get-profile-photo', {
+        username: session?.user?.username,
+      });
+      if (response.data.success) {
+        setProfilePhoto(response.data.profilePhoto);
+        const urlParts = response.data.profilePhoto.split('/');
+        const publicId = urlParts[urlParts.length - 1].split('.')[0];
+        setProfilePhotoPublicId(publicId);
+      }
+    } catch (error) {
+      console.error('Error fetching profile photo:', error);
+    }
+  }, [session]);
+
   // Fetch initial state from the server
   useEffect(() => {
     if (!session || !session.user) return;
 
     fetchFeeds();
-
     fetchAcceptFeeds();
-  }, [session, setValue, toast, fetchAcceptFeeds, fetchFeeds]);
+    fetchProfilePhoto();
+  }, [session, setValue, toast, fetchAcceptFeeds, fetchFeeds, fetchProfilePhoto]);
 
   // Handle switch change
   const handleSwitchChange = async () => {
@@ -116,6 +136,26 @@ function UserDashboard() {
     }
   };
 
+  const handleDeleteProfilePhoto = async () => {
+    try {
+      await axios.post('/api/delete-profile-photo', {
+        username: session?.user?.username,
+        publicId: profilePhotoPublicId,
+      });
+      setProfilePhoto('');
+      toast({
+        title: 'Success',
+        description: 'Profile photo deleted successfully!',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete profile photo',
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (!session || !session.user) {
     return <div></div>;
   }
@@ -133,9 +173,63 @@ function UserDashboard() {
     });
   };
 
+  const handleUploadSuccess = async (result: any) => {
+    try {
+      const publicId = result.info.public_id;
+      await axios.post('/api/update-profile-photo', {
+        username,
+        profilePhoto: result.info.secure_url,
+      });
+      setProfilePhoto(result.info.secure_url);
+      setProfilePhotoPublicId(publicId);
+      toast({
+        title: 'Success',
+        description: 'Profile photo updated successfully!',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update profile photo',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <div className="my-8 mx-4 md:mx-8 lg:mx-auto p-6 bg-white rounded w-full max-w-6xl">
       <h1 className="text-4xl font-bold mb-4">User Dashboard</h1>
+
+      <div className="mb-4">
+        {profilePhoto ? (
+          <div className="relative">
+            <img src={profilePhoto} alt="Profile Photo" className="w-32 h-32 rounded-full object-cover mb-4" />
+            <Button
+              onClick={handleDeleteProfilePhoto}
+              className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        ) : (
+          <div className="w-32 h-32 bg-gray-200 rounded-full mb-4"></div>
+        )}
+        <CldUploadWidget
+          signatureEndpoint="/api/sign-image"
+          uploadPreset="anonfeed"
+          onSuccess={handleUploadSuccess}
+        >
+          {({ open }) => {
+            return (
+              <button
+                onClick={() => open()}
+                className="bg-blue-500 text-white px-4 py-2 rounded"
+              >
+                Upload Profile Photo
+              </button>
+            );
+          }}
+        </CldUploadWidget>
+      </div>
 
       <div className="mb-4">
         <h2 className="text-lg font-semibold mb-2">Copy Your Unique Link</h2>

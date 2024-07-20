@@ -1,5 +1,5 @@
+// src/model/User.ts
 import mongoose, { Schema, Document } from "mongoose";
-import { IFeed } from './Feed'; // Ensure Feed is imported
 
 export interface IUser extends Document {
     username: string;
@@ -13,6 +13,8 @@ export interface IUser extends Document {
     following: mongoose.Types.ObjectId[];
     followers: mongoose.Types.ObjectId[];
     feeds: mongoose.Types.ObjectId[];
+    profilePhoto: string;  // New field
+    coverPhoto: string;    // New field
 }
 
 const UserSchema: Schema<IUser> = new Schema({
@@ -55,6 +57,14 @@ const UserSchema: Schema<IUser> = new Schema({
     following: [{ type: Schema.Types.ObjectId, ref: "User" }],
     followers: [{ type: Schema.Types.ObjectId, ref: "User" }],
     feeds: [{ type: Schema.Types.ObjectId, ref: "Feed" }],
+    profilePhoto: {
+        type: String,
+        default: ''
+    },
+    coverPhoto: {
+        type: String,
+        default: ''
+    }
 });
 
 const UserModel = (mongoose.models.User as mongoose.Model<IUser>) || mongoose.model<IUser>("User", UserSchema);
