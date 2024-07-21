@@ -4,6 +4,8 @@ import { IFeed } from '../model/Feed';
 export interface ApiResponse {
     success: boolean;
     message: string;
+    profilePhoto?: string;
+    coverPhoto?: string;
     feeds?: Array<IFeed>;
     users?: Array<IUser>;
     following?: Array<IUser>;

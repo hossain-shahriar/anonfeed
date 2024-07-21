@@ -1,4 +1,3 @@
-// src/app/profile/[username]/page.tsx
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
@@ -19,6 +18,8 @@ function UserProfile() {
     const [isFollowing, setIsFollowing] = useState(false);
     const [followingCount, setFollowingCount] = useState(0);
     const [followersCount, setFollowersCount] = useState(0);
+    const [profilePhoto, setProfilePhoto] = useState('');
+    const [coverPhoto, setCoverPhoto] = useState('');
     const { toast } = useToast();
     const { username } = useParams();
     const { data: session, status } = useSession();
@@ -30,7 +31,7 @@ function UserProfile() {
         }
     }, [status, router]);
 
-    const fetchFeeds = useCallback(async () => {
+    const fetchProfileData = useCallback(async () => {
         setIsLoading(true);
         try {
             const response = await axios.get<ApiResponse>(`/api/get-feeds/${username}`);
@@ -39,6 +40,10 @@ function UserProfile() {
             } else {
                 setFeeds([]); // Clear feeds if not following or no feeds available
             }
+            setProfilePhoto(response.data.profilePhoto || '');
+            setCoverPhoto(response.data.coverPhoto || '');
+            setFollowingCount(response.data.followingCount ?? 0);
+            setFollowersCount(response.data.followersCount ?? 0);
         } catch (error) {
             const axiosError = error as AxiosError<ApiResponse>;
             if (axiosError.response?.status === 403) {
@@ -47,7 +52,7 @@ function UserProfile() {
             toast({
                 title: 'Error',
                 description:
-                    axiosError.response?.data.message ?? 'Failed to fetch feeds',
+                    axiosError.response?.data.message ?? 'Failed to fetch profile data',
                 variant: 'destructive',
             });
         } finally {
@@ -70,52 +75,19 @@ function UserProfile() {
         }
     }, [username, toast]);
 
-    const fetchFollowingCount = useCallback(async () => {
-        try {
-            const response = await axios.post<ApiResponse>('/api/count-following', { username });
-            setFollowingCount(response.data.followingCount ?? 0);
-        } catch (error) {
-            const axiosError = error as AxiosError<ApiResponse>;
-            toast({
-                title: 'Error',
-                description:
-                    axiosError.response?.data.message ?? 'Failed to fetch following count',
-                variant: 'destructive',
-            });
-        }
-    }, [username, toast]);
-
-    const fetchFollowersCount = useCallback(async () => {
-        try {
-            const response = await axios.post<ApiResponse>('/api/count-followers', { username });
-            setFollowersCount(response.data.followersCount ?? 0);
-        } catch (error) {
-            const axiosError = error as AxiosError<ApiResponse>;
-            toast({
-                title: 'Error',
-                description:
-                    axiosError.response?.data.message ?? 'Failed to fetch followers count',
-                variant: 'destructive',
-            });
-        }
-    }, [username, toast]);
-
     // Fetch initial state from the server
     useEffect(() => {
         if (!username) return;
 
-        fetchFeeds();
+        fetchProfileData();
         checkFollowingStatus();
-        fetchFollowingCount();
-        fetchFollowersCount();
-    }, [username, fetchFeeds, checkFollowingStatus, fetchFollowingCount, fetchFollowersCount]);
+    }, [username, fetchProfileData, checkFollowingStatus]);
 
     const handleFollow = async () => {
         try {
             await axios.post('/api/follow', { username });
             setIsFollowing(true);
-            fetchFeeds(); // Refresh feeds after following
-            fetchFollowersCount(); // Refresh followers count after following
+            fetchProfileData(); // Refresh profile data after following
         } catch (error) {
             const axiosError = error as AxiosError<ApiResponse>;
             toast({
@@ -132,7 +104,7 @@ function UserProfile() {
             await axios.post('/api/unfollow', { username });
             setIsFollowing(false);
             setFeeds([]); // Clear feeds immediately after unfollowing
-            fetchFollowersCount(); // Refresh followers count after unfollowing
+            fetchProfileData(); // Refresh profile data after unfollowing
         } catch (error) {
             const axiosError = error as AxiosError<ApiResponse>;
             toast({
@@ -149,29 +121,49 @@ function UserProfile() {
 
     return (
         <div className="my-8 mx-4 md:mx-8 lg:mx-auto p-6 bg-white rounded w-full max-w-6xl">
-            <h1 className="text-4xl font-bold mb-4">{username}'s Profile</h1>
-
-            <div className="flex items-center space-x-4">
-                <div>
-                    <span className="font-semibold">Following:</span> {followingCount}
+            <div className="relative">
+                {coverPhoto && (
+                    <div className="relative h-48 w-full mb-4 rounded overflow-hidden">
+                        <img src={coverPhoto} alt="Cover Photo" className="object-cover w-full h-full" />
+                    </div>
+                )}
+                <div className="absolute left-4 bottom-[-40px] transform translate-y-1/2">
+                    {profilePhoto && (
+                        <div className="relative w-52 h-52 rounded-full overflow-hidden border-4 border-white">
+                            <img src={profilePhoto} alt="Profile Photo" className="object-cover w-full h-full" />
+                        </div>
+                    )}
                 </div>
-                <div>
-                    <span className="font-semibold">Followers:</span> {followersCount}
+                {!isOwnProfile && (
+                    <div className="absolute right-4 bottom-[-40px] transform translate-y-1/2">
+                        <Button
+                            className="bg-blue-500 text-white"
+                            onClick={isFollowing ? handleUnfollow : handleFollow}
+                        >
+                            {isFollowing ? 'Unfollow' : 'Follow'}
+                        </Button>
+                    </div>
+                )}
+            </div>
+            <div className="mt-16 text-center">
+                <h1 className="text-4xl font-bold mb-2">{username}</h1>
+                <div className="flex justify-center space-x-8">
+                    <div>
+                        <h2 className="text-lg font-semibold">Followers</h2>
+                        <p>{followersCount}</p>
+                    </div>
+                    <div>
+                        <h2 className="text-lg font-semibold">Following</h2>
+                        <p>{followingCount}</p>
+                    </div>
                 </div>
             </div>
-
-            {!isOwnProfile && (
-                <Button className="mt-4" variant="outline" onClick={isFollowing ? handleUnfollow : handleFollow}>
-                    {isFollowing ? 'Unfollow' : 'Follow'}
-                </Button>
-            )}
-
             <Button
                 className="mt-4"
                 variant="outline"
                 onClick={(e) => {
                     e.preventDefault();
-                    fetchFeeds();
+                    fetchProfileData();
                 }}
             >
                 {isLoading ? (

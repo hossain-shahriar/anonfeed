@@ -1,4 +1,3 @@
-// src/app/(app)/dashboard/page.tsx
 'use client';
 
 import FeedCard from '@/components/FeedCard';
@@ -10,7 +9,7 @@ import { IFeed } from '@/model/Feed';
 import { ApiResponse } from '@/types/ApiResponse';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios, { AxiosError } from 'axios';
-import { Loader2, RefreshCcw, Trash2 } from 'lucide-react';
+import { Loader2, RefreshCcw, Eye, Trash2, UploadCloud } from 'lucide-react';
 import { User } from 'next-auth';
 import { useSession } from 'next-auth/react';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -23,7 +22,11 @@ function UserDashboard() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSwitchLoading, setIsSwitchLoading] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState('');
+  const [coverPhoto, setCoverPhoto] = useState('');
   const [profilePhotoPublicId, setProfilePhotoPublicId] = useState('');
+  const [coverPhotoPublicId, setCoverPhotoPublicId] = useState('');
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
 
   const { toast } = useToast();
 
@@ -65,7 +68,16 @@ function UserDashboard() {
       setIsSwitchLoading(false);
       try {
         const response = await axios.get<ApiResponse>('/api/get-feeds');
+        console.log('Response data:', response.data);
         setFeeds(response.data.feeds || []);
+        setProfilePhoto(response.data.profilePhoto || '');
+        setCoverPhoto(response.data.coverPhoto || '');
+        const profilePhotoParts = response.data.profilePhoto?.split('/');
+        const coverPhotoParts = response.data.coverPhoto?.split('/');
+        setProfilePhotoPublicId(profilePhotoParts?.[profilePhotoParts.length - 1]?.split('.')[0] || '');
+        setCoverPhotoPublicId(coverPhotoParts?.[coverPhotoParts.length - 1]?.split('.')[0] || '');
+        setFollowersCount(response.data.followersCount ?? 0);
+        setFollowingCount(response.data.followingCount ?? 0);
         if (refresh) {
           toast({
             title: 'Refreshed Feeds',
@@ -88,30 +100,13 @@ function UserDashboard() {
     [setIsLoading, setFeeds, toast]
   );
 
-  const fetchProfilePhoto = useCallback(async () => {
-    try {
-      const response = await axios.post('/api/get-profile-photo', {
-        username: session?.user?.username,
-      });
-      if (response.data.success) {
-        setProfilePhoto(response.data.profilePhoto);
-        const urlParts = response.data.profilePhoto.split('/');
-        const publicId = urlParts[urlParts.length - 1].split('.')[0];
-        setProfilePhotoPublicId(publicId);
-      }
-    } catch (error) {
-      console.error('Error fetching profile photo:', error);
-    }
-  }, [session]);
-
   // Fetch initial state from the server
   useEffect(() => {
     if (!session || !session.user) return;
 
     fetchFeeds();
     fetchAcceptFeeds();
-    fetchProfilePhoto();
-  }, [session, setValue, toast, fetchAcceptFeeds, fetchFeeds, fetchProfilePhoto]);
+  }, [session, setValue, toast, fetchAcceptFeeds, fetchFeeds]);
 
   // Handle switch change
   const handleSwitchChange = async () => {
@@ -147,10 +142,32 @@ function UserDashboard() {
         title: 'Success',
         description: 'Profile photo deleted successfully!',
       });
+      fetchFeeds(); // Refresh feeds to get updated follower and following counts
     } catch (error) {
       toast({
         title: 'Error',
         description: 'Failed to delete profile photo',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteCoverPhoto = async () => {
+    try {
+      await axios.post('/api/delete-cover-photo', {
+        username: session?.user?.username,
+        publicId: coverPhotoPublicId,
+      });
+      setCoverPhoto('');
+      toast({
+        title: 'Success',
+        description: 'Cover photo deleted successfully!',
+      });
+      fetchFeeds(); // Refresh feeds to get updated follower and following counts
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete cover photo',
         variant: 'destructive',
       });
     }
@@ -173,7 +190,7 @@ function UserDashboard() {
     });
   };
 
-  const handleUploadSuccess = async (result: any) => {
+  const handleUploadProfilePhotoSuccess = async (result: any) => {
     try {
       const publicId = result.info.public_id;
       await axios.post('/api/update-profile-photo', {
@@ -186,6 +203,7 @@ function UserDashboard() {
         title: 'Success',
         description: 'Profile photo updated successfully!',
       });
+      fetchFeeds(); // Refresh feeds to get updated follower and following counts
     } catch (error) {
       toast({
         title: 'Error',
@@ -195,43 +213,116 @@ function UserDashboard() {
     }
   };
 
+  const handleUploadCoverPhotoSuccess = async (result: any) => {
+    try {
+      const publicId = result.info.public_id;
+      await axios.post('/api/update-cover-photo', {
+        username,
+        coverPhoto: result.info.secure_url,
+      });
+      setCoverPhoto(result.info.secure_url);
+      setCoverPhotoPublicId(publicId);
+      toast({
+        title: 'Success',
+        description: 'Cover photo updated successfully!',
+      });
+      fetchFeeds(); // Refresh feeds to get updated follower and following counts
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update cover photo',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleCoverPhotoClick = (open: any) => (event: React.MouseEvent<HTMLDivElement>) => {
+    open();
+  };
+
+  const handleProfilePhotoClick = (open: any) => (event: React.MouseEvent<HTMLDivElement>) => {
+    open();
+  };
+
   return (
     <div className="my-8 mx-4 md:mx-8 lg:mx-auto p-6 bg-white rounded w-full max-w-6xl">
-      <h1 className="text-4xl font-bold mb-4">User Dashboard</h1>
-
-      <div className="mb-4">
-        {profilePhoto ? (
-          <div className="relative">
-            <img src={profilePhoto} alt="Profile Photo" className="w-32 h-32 rounded-full object-cover mb-4" />
-            <Button
-              onClick={handleDeleteProfilePhoto}
-              className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
+      <div className="relative">
+        {coverPhoto ? (
+          <div className="relative h-48 w-full mb-4 rounded overflow-hidden">
+            <img src={coverPhoto} alt="Cover Photo" className="object-cover w-full h-full" />
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black bg-opacity-50 text-white space-x-4">
+              <button className="bg-red-500 p-2 rounded-full" onClick={handleDeleteCoverPhoto}>
+                <Trash2 className="w-6 h-6" />
+              </button>
+              <a href={coverPhoto} target="_blank" rel="noopener noreferrer" className="bg-blue-500 p-2 rounded-full">
+                <Eye className="w-6 h-6" />
+              </a>
+            </div>
           </div>
         ) : (
-          <div className="w-32 h-32 bg-gray-200 rounded-full mb-4"></div>
+          <CldUploadWidget
+            signatureEndpoint="/api/sign-image"
+            uploadPreset="anonfeed"
+            onSuccess={handleUploadCoverPhotoSuccess}
+          >
+            {({ open }) => (
+              <div className="relative h-48 w-full mb-4 bg-gray-200 rounded overflow-hidden">
+                <div className="flex items-center justify-center h-full w-full cursor-pointer hover:bg-gray-300 transition-colors" onClick={handleCoverPhotoClick(open)}>
+                  <UploadCloud className="w-10 h-10 text-gray-500" />
+                  <span className="ml-2 text-gray-500">Upload Cover Photo</span>
+                </div>
+              </div>
+            )}
+          </CldUploadWidget>
         )}
-        <CldUploadWidget
-          signatureEndpoint="/api/sign-image"
-          uploadPreset="anonfeed"
-          onSuccess={handleUploadSuccess}
-        >
-          {({ open }) => {
-            return (
-              <button
-                onClick={() => open()}
-                className="bg-blue-500 text-white px-4 py-2 rounded"
-              >
-                Upload Profile Photo
-              </button>
-            );
-          }}
-        </CldUploadWidget>
+
+        <div className="absolute left-4 bottom-[-40px] transform translate-y-1/2">
+          {profilePhoto ? (
+            <div className="relative w-52 h-52 rounded-full overflow-hidden border-4 border-white">
+              <img src={profilePhoto} alt="Profile Photo" className="object-cover w-full h-full" />
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black bg-opacity-50 text-white space-x-4 rounded-full">
+                <button className="bg-red-500 p-2 rounded-full" onClick={handleDeleteProfilePhoto}>
+                  <Trash2 className="w-6 h-6" />
+                </button>
+                <a href={profilePhoto} target="_blank" rel="noopener noreferrer" className="bg-blue-500 p-2 rounded-full">
+                  <Eye className="w-6 h-6" />
+                </a>
+              </div>
+            </div>
+          ) : (
+            <CldUploadWidget
+              signatureEndpoint="/api/sign-image"
+              uploadPreset="anonfeed"
+              onSuccess={handleUploadProfilePhotoSuccess}
+            >
+              {({ open }) => (
+                <div className="relative w-52 h-52 rounded-full bg-gray-200 overflow-hidden border-4 border-white">
+                  <div className="flex items-center justify-center h-full w-full cursor-pointer hover:bg-gray-300 transition-colors" onClick={handleProfilePhotoClick(open)}>
+                    <UploadCloud className="w-10 h-10 text-gray-500" />
+                    <span className="ml-2 text-gray-500">Upload Profile Photo</span>
+                  </div>
+                </div>
+              )}
+            </CldUploadWidget>
+          )}
+        </div>
       </div>
 
-      <div className="mb-4">
+      <div className="mt-16 text-center">
+        <h1 className="text-4xl font-bold mb-2">{username}</h1>
+        <div className="flex justify-center space-x-8">
+          <div>
+            <h2 className="text-lg font-semibold">Followers</h2>
+            <p>{followersCount}</p>
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold">Following</h2>
+            <p>{followingCount}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-8">
         <h2 className="text-lg font-semibold mb-2">Copy Your Unique Link</h2>
         <div className="flex items-center">
           <input
@@ -244,7 +335,7 @@ function UserDashboard() {
         </div>
       </div>
 
-      <div className="mb-4">
+      <div className="mt-4">
         <Switch
           {...register('acceptFeeds')}
           checked={acceptFeeds}
@@ -255,7 +346,7 @@ function UserDashboard() {
           Accept Feeds: {acceptFeeds ? 'On' : 'Off'}
         </span>
       </div>
-      <Separator />
+      <Separator className="my-4" />
 
       <Button
         className="mt-4"

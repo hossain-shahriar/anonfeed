@@ -1,4 +1,3 @@
-// src/app/api/get-feeds/[username]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import UserModel from '@/model/User';
@@ -37,11 +36,7 @@ export async function GET(request: NextRequest, { params }: { params: { username
 
         const isFollowing = loggedInUser.following.some(followingId => followingId.equals(profileUserId));
 
-        if (!isFollowing) {
-            return NextResponse.json({ success: false, message: "You are not following this user" }, { status: 403 });
-        }
-
-        const userFeeds = await UserModel.aggregate([
+        const userFeeds = isFollowing ? await UserModel.aggregate([
             { $match: { username: username } },
             {
                 $lookup: {
@@ -54,21 +49,22 @@ export async function GET(request: NextRequest, { params }: { params: { username
             { $unwind: '$feeds' },
             { $sort: { 'feeds.createdAt': -1 } },
             { $group: { _id: '$_id', feeds: { $push: '$feeds' } } }
-        ]).exec();
+        ]).exec() : [];
 
         console.log('Aggregation result:', userFeeds);
 
-        if (!userFeeds || userFeeds.length === 0) {
-            console.log('User not found or no feeds available');
-            return NextResponse.json(
-                { message: 'User not found', success: false },
-                { status: 404 }
-            );
-        }
+        const feeds = userFeeds.length > 0 ? userFeeds[0].feeds : [];
 
-        console.log('Feeds found:', userFeeds[0].feeds);
+        console.log('Feeds found:', feeds);
+
         return NextResponse.json(
-            { feeds: userFeeds[0].feeds },
+            { 
+                feeds: feeds, 
+                profilePhoto: profileUser.profilePhoto,
+                coverPhoto: profileUser.coverPhoto,
+                followingCount: profileUser.following.length,
+                followersCount: profileUser.followers.length
+            },
             { status: 200 }
         );
     } catch (error) {
