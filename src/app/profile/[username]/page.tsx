@@ -20,6 +20,10 @@ function UserProfile() {
     const [followersCount, setFollowersCount] = useState(0);
     const [profilePhoto, setProfilePhoto] = useState('');
     const [coverPhoto, setCoverPhoto] = useState('');
+    const [followers, setFollowers] = useState<{ username: string; profilePhoto: string }[]>([]);
+    const [following, setFollowing] = useState<{ username: string; profilePhoto: string }[]>([]);
+    const [showFollowers, setShowFollowers] = useState(false);
+    const [showFollowing, setShowFollowing] = useState(false);
     const { toast } = useToast();
     const { username } = useParams();
     const { data: session, status } = useSession();
@@ -75,6 +79,32 @@ function UserProfile() {
         }
     }, [username, toast]);
 
+    const fetchFollowers = async () => {
+        try {
+            const response = await axios.get<{ followers: { username: string; profilePhoto: string }[] }>(`/api/show-followers?username=${username}`);
+            setFollowers(response.data.followers);
+        } catch (error) {
+            toast({
+                title: 'Error',
+                description: 'Failed to fetch followers',
+                variant: 'destructive',
+            });
+        }
+    };
+    
+    const fetchFollowing = async () => {
+        try {
+            const response = await axios.get<{ following: { username: string; profilePhoto: string }[] }>(`/api/show-following?username=${username}`);
+            setFollowing(response.data.following);
+        } catch (error) {
+            toast({
+                title: 'Error',
+                description: 'Failed to fetch following',
+                variant: 'destructive',
+            });
+        }
+    };
+
     // Fetch initial state from the server
     useEffect(() => {
         if (!username) return;
@@ -129,7 +159,7 @@ function UserProfile() {
                 )}
                 <div className="absolute left-4 bottom-[-40px] transform translate-y-1/2">
                     {profilePhoto && (
-                        <div className="relative w-52 h-52 rounded-full overflow-hidden border-4 border-white">
+                        <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-white">
                             <img src={profilePhoto} alt="Profile Photo" className="object-cover w-full h-full" />
                         </div>
                     )}
@@ -148,13 +178,53 @@ function UserProfile() {
             <div className="mt-16 text-center">
                 <h1 className="text-4xl font-bold mb-2">{username}</h1>
                 <div className="flex justify-center space-x-8">
-                    <div>
+                    <div
+                        onMouseEnter={() => {
+                            fetchFollowers();
+                            setShowFollowers(true);
+                        }}
+                        onMouseLeave={() => setShowFollowers(false)}
+                    >
                         <h2 className="text-lg font-semibold">Followers</h2>
                         <p>{followersCount}</p>
+                        {showFollowers && (
+                            <div className="absolute mt-2 w-56 bg-white border rounded shadow-lg p-4">
+                                {followers.map((follower, index) => (
+                                    <div key={index} className="flex items-center space-x-2 mb-2">
+                                        <img
+                                            src={follower.profilePhoto || '/default-profile.png'}
+                                            alt={follower.username}
+                                            className="w-8 h-8 rounded-full"
+                                        />
+                                        <span>{follower.username}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                    <div>
+                    <div
+                        onMouseEnter={() => {
+                            fetchFollowing();
+                            setShowFollowing(true);
+                        }}
+                        onMouseLeave={() => setShowFollowing(false)}
+                    >
                         <h2 className="text-lg font-semibold">Following</h2>
                         <p>{followingCount}</p>
+                        {showFollowing && (
+                            <div className="absolute mt-2 w-56 bg-white border rounded shadow-lg p-4">
+                                {following.map((follow, index) => (
+                                    <div key={index} className="flex items-center space-x-2 mb-2">
+                                        <img
+                                            src={follow.profilePhoto || '/default-profile.png'}
+                                            alt={follow.username}
+                                            className="w-8 h-8 rounded-full"
+                                        />
+                                        <span>{follow.username}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
