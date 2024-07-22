@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = new mongoose.Types.ObjectId("669e0ff5d7cb34f324acfa9b");
+    const userId = new mongoose.Types.ObjectId(user._id);
 
     try {
         const loggedInUser = await UserModel.findById(userId);
