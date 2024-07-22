@@ -23,7 +23,7 @@ import { useRouter } from "next/navigation"
 import { signInSchema } from "@/schemas/signInSchema"
 
 
-const page = () => {
+const SignInPage = () => {
   
   const { toast } = useToast()
   const router = useRouter();
@@ -129,4 +129,4 @@ const page = () => {
   )
 }
 
-export default page
+export default SignInPage
