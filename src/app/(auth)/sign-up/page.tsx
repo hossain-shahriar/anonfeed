@@ -21,7 +21,7 @@ import { Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 
-const page = () => {
+const SignUpPage = () => {
   const [username, setUsername] = useState('')
   const [usernameMessage, setUsernameMessage] = useState('')
   const [isCheckingUsername, setIsCheckingUsername] = useState(false)
@@ -187,4 +187,4 @@ const page = () => {
   )
 }
 
-export default page
+export default SignUpPage
