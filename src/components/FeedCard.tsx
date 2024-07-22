@@ -35,9 +35,10 @@ type FeedCardProps = {
   feed: IFeed & { comments: PopulatedComment[] };
   onFeedDelete?: (feedId: string) => void;
   onCommentDelete?: (commentId: string) => void;
+  isProfileView?: boolean; // New prop to indicate profile view
 };
 
-const FeedCard = ({ feed, onFeedDelete, onCommentDelete }: FeedCardProps) => {
+const FeedCard = ({ feed, onFeedDelete, onCommentDelete, isProfileView = false }: FeedCardProps) => {
   const { toast } = useToast();
   const [commentText, setCommentText] = useState('');
 
@@ -160,30 +161,32 @@ const FeedCard = ({ feed, onFeedDelete, onCommentDelete }: FeedCardProps) => {
                     <span className="font-semibold">{comment.user.username}</span>
                     <span className="text-sm text-gray-600">{dayjs(comment.createdAt).format('MMM D, YYYY h:mm A')}</span>
                   </div>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant='destructive' size='sm'>
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This action cannot be undone. This will permanently delete
-                          this comment.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>
-                          Cancel
-                        </AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDeleteCommentConfirm((comment._id as mongoose.Types.ObjectId).toString())}>
-                          Continue
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  {!isProfileView && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant='destructive' size='sm'>
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete
+                            this comment.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>
+                            Cancel
+                          </AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteCommentConfirm((comment._id as mongoose.Types.ObjectId).toString())}>
+                            Continue
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                 </div>
                 <p className="mt-2">{comment.comment}</p>
               </div>

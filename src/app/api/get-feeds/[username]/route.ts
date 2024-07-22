@@ -1,6 +1,9 @@
+// src/app/api/get-feeds/[username]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import UserModel from '@/model/User';
+import FeedModel, { IFeed } from '@/model/Feed';
+import CommentModel, { IComment } from '@/model/Comment';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/options';
 import mongoose from 'mongoose';
@@ -53,13 +56,29 @@ export async function GET(request: NextRequest, { params }: { params: { username
 
         console.log('Aggregation result:', userFeeds);
 
-        const feeds = userFeeds.length > 0 ? userFeeds[0].feeds : [];
+        const feeds: IFeed[] = userFeeds.length > 0 ? userFeeds[0].feeds : [];
 
-        console.log('Feeds found:', feeds);
+        const feedIds = feeds.map((feed: IFeed) => feed._id);
+        const comments = await CommentModel.find({ feed: { $in: feedIds } }).populate('user').exec();
+
+        const feedsWithComments = feeds.map((feed: IFeed) => ({
+            ...feed,
+            comments: comments.filter(comment => comment.feed.equals(feed._id)).map(comment => ({
+                _id: comment._id,
+                comment: comment.comment,
+                createdAt: comment.createdAt,
+                user: {
+                    username: (comment.user as any).username,
+                    profilePhoto: (comment.user as any).profilePhoto
+                }
+            }))
+        }));
+
+        console.log('Feeds with comments:', feedsWithComments);
 
         return NextResponse.json(
             { 
-                feeds: feeds, 
+                feeds: feedsWithComments, 
                 profilePhoto: profileUser.profilePhoto,
                 coverPhoto: profileUser.coverPhoto,
                 followingCount: profileUser.following.length,

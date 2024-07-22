@@ -1,4 +1,4 @@
-'use client';
+'use client'
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
@@ -11,9 +11,20 @@ import { useToast } from '@/components/ui/use-toast';
 import { IFeed } from '@/model/Feed';
 import { ApiResponse } from '@/types/ApiResponse';
 import { RefreshCcw, Loader2 } from 'lucide-react';
+import { IComment } from '@/model/Comment';
+import mongoose from 'mongoose';
+
+type PopulatedComment = Omit<IComment, 'user'> & {
+  user: {
+    username: string;
+    profilePhoto: string;
+  };
+};
+
+type PopulatedFeed = IFeed & { comments: PopulatedComment[] };
 
 function UserProfile() {
-    const [feeds, setFeeds] = useState<IFeed[]>([]);
+    const [feeds, setFeeds] = useState<PopulatedFeed[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isFollowing, setIsFollowing] = useState(false);
     const [followingCount, setFollowingCount] = useState(0);
@@ -40,7 +51,19 @@ function UserProfile() {
         try {
             const response = await axios.get<ApiResponse>(`/api/get-feeds/${username}`);
             if (response.data.feeds) {
-                setFeeds(response.data.feeds);
+                const feedsWithComments = response.data.feeds.map((feed: any) => ({
+                    ...feed,
+                    comments: feed.comments.map((comment: any) => ({
+                      _id: new mongoose.Types.ObjectId(comment._id),
+                      comment: comment.comment,
+                      createdAt: new Date(comment.createdAt),
+                      user: {
+                        username: comment.user.username,
+                        profilePhoto: comment.user.profilePhoto,
+                      },
+                    })),
+                }));
+                setFeeds(feedsWithComments);
             } else {
                 setFeeds([]); // Clear feeds if not following or no feeds available
             }
@@ -105,7 +128,6 @@ function UserProfile() {
         }
     };
 
-    // Fetch initial state from the server
     useEffect(() => {
         if (!username) return;
 
@@ -146,7 +168,6 @@ function UserProfile() {
         }
     };
 
-    // Check if the profile belongs to the logged-in user
     const isOwnProfile = session?.user?.username === username;
 
     return (
@@ -249,6 +270,7 @@ function UserProfile() {
                         <FeedCard
                             key={feed._id.toString()}
                             feed={feed}
+                            isProfileView={true} // Pass true for profile view
                         />
                     ))
                 ) : (
