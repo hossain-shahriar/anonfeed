@@ -26,3 +26,4 @@ npx shadcn-ui@latest add carousel
 npm install embla-carousel-react --save
 npm i embla-carousel-autoplay
 npx shadcn-ui@latest add textarea
+npm install eslint-plugin-react-hooks --save-dev
