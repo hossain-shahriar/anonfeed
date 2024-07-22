@@ -1,3 +1,4 @@
+// src/model/Feed.ts
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface IFeed extends Document {
@@ -5,6 +6,7 @@ export interface IFeed extends Document {
     title: string;
     description: string;
     createdAt: Date;
+    comments: mongoose.Types.ObjectId[];  // New field
 }
 
 const FeedSchema: Schema<IFeed> = new Schema({
@@ -19,7 +21,8 @@ const FeedSchema: Schema<IFeed> = new Schema({
     createdAt: {
         type: Date,
         default: Date.now
-    }
+    },
+    comments: [{ type: Schema.Types.ObjectId, ref: "Comment" }],
 });
 
 const FeedModel = (mongoose.models.Feed as mongoose.Model<IFeed>) || mongoose.model<IFeed>("Feed", FeedSchema);

@@ -15,6 +15,7 @@ export interface IUser extends Document {
     feeds: mongoose.Types.ObjectId[];
     profilePhoto: string;  // New field
     coverPhoto: string;    // New field
+    comments: mongoose.Types.ObjectId[];  // New field
 }
 
 const UserSchema: Schema<IUser> = new Schema({
@@ -64,7 +65,8 @@ const UserSchema: Schema<IUser> = new Schema({
     coverPhoto: {
         type: String,
         default: ''
-    }
+    },
+    comments: [{ type: Schema.Types.ObjectId, ref: "Comment" }],
 });
 
 const UserModel = (mongoose.models.User as mongoose.Model<IUser>) || mongoose.model<IUser>("User", UserSchema);

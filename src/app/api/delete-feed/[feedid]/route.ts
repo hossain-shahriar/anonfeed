@@ -1,5 +1,7 @@
+// src/app/api/delete-feed/[feedid]/route.ts
 import UserModel from '@/model/User';
 import FeedModel from '@/model/Feed';
+import CommentModel from '@/model/Comment';
 import { getServerSession } from 'next-auth/next';
 import dbConnect from '@/lib/dbConnect';
 import { User } from 'next-auth';
@@ -22,7 +24,7 @@ export async function DELETE(
   }
 
   try {
-    // Remove the feed document from the Feed collection
+    // Find and delete the feed document from the Feed collection
     const feed = await FeedModel.findByIdAndDelete(feedId);
 
     if (!feed) {
@@ -33,7 +35,6 @@ export async function DELETE(
     }
 
     // Remove the feed reference from the user's feeds array
-    // Update the user document to remove the feed reference
     const updatedResult = await UserModel.updateOne(
       { _id: _user._id, feeds: feedId },
       { $pull: { feeds: feedId } }
@@ -46,11 +47,23 @@ export async function DELETE(
       );
     }
 
+    // Find and delete all comments related to the feed
+    const comments = await CommentModel.find({ feed: feedId });
+    const commentIds = comments.map(comment => comment._id);
+
+    await CommentModel.deleteMany({ feed: feedId });
+
+    // Remove the comment references from the user's comments array
+    await UserModel.updateMany(
+      { comments: { $in: commentIds } },
+      { $pull: { comments: { $in: commentIds } } }
+    );
+
     return new Response(
-      JSON.stringify({ message: 'Feed deleted', success: true }),
+      JSON.stringify({ message: 'Feed and associated comments deleted', success: true }),
       { status: 200 }
     );
-    
+
   } catch (error) {
     console.error('Error deleting feed:', error);
     return new Response(

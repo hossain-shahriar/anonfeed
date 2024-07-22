@@ -16,9 +16,26 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { acceptFeedSchema } from '@/schemas/acceptFeedSchema';
 import { CldUploadWidget } from 'next-cloudinary';
+import { IComment } from '@/model/Comment';
+import mongoose from 'mongoose';
+
+type PopulatedComment = Omit<IComment, 'user'> & {
+  user: {
+    username: string;
+    profilePhoto: string;
+  };
+};
+
+type FeedCardProps = {
+  feed: IFeed & { comments: PopulatedComment[] };
+  onFeedDelete?: (feedId: string) => void;
+  onCommentDelete?: (commentId: string) => void;
+};
+
+type PopulatedFeed = IFeed & { comments: PopulatedComment[] };
 
 function UserDashboard() {
-  const [feeds, setFeeds] = useState<IFeed[]>([]);
+  const [feeds, setFeeds] = useState<PopulatedFeed[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSwitchLoading, setIsSwitchLoading] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState('');
@@ -73,7 +90,23 @@ function UserDashboard() {
       try {
         const response = await axios.get<ApiResponse>('/api/get-feeds');
         console.log('Response data:', response.data);
-        setFeeds(response.data.feeds || []);
+
+        if (response.data.feeds) {
+          const feedsWithComments = response.data.feeds.map((feed: any) => ({
+            ...feed,
+            comments: feed.comments.map((comment: any) => ({
+              _id: new mongoose.Types.ObjectId(comment._id),
+              comment: comment.comment,
+              createdAt: new Date(comment.createdAt),
+              user: {
+                username: comment.user.username,
+                profilePhoto: comment.user.profilePhoto,
+              },
+            })),
+          }));
+          setFeeds(feedsWithComments);
+        }
+
         setProfilePhoto(response.data.profilePhoto || '');
         setCoverPhoto(response.data.coverPhoto || '');
         const profilePhotoParts = response.data.profilePhoto?.split('/');
@@ -104,31 +137,32 @@ function UserDashboard() {
     [setIsLoading, setFeeds, toast]
   );
 
+
   const fetchFollowers = async () => {
     try {
-        const response = await axios.get<{ followers: { username: string; profilePhoto: string }[] }>(`/api/show-followers?username=${username}`);
-        setFollowers(response.data.followers);
+      const response = await axios.get<{ followers: { username: string; profilePhoto: string }[] }>(`/api/show-followers?username=${username}`);
+      setFollowers(response.data.followers);
     } catch (error) {
-        toast({
-            title: 'Error',
-            description: 'Failed to fetch followers',
-            variant: 'destructive',
-        });
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch followers',
+        variant: 'destructive',
+      });
     }
-};
+  };
 
-const fetchFollowing = async () => {
+  const fetchFollowing = async () => {
     try {
-        const response = await axios.get<{ following: { username: string; profilePhoto: string }[] }>(`/api/show-following?username=${username}`);
-        setFollowing(response.data.following);
+      const response = await axios.get<{ following: { username: string; profilePhoto: string }[] }>(`/api/show-following?username=${username}`);
+      setFollowing(response.data.following);
     } catch (error) {
-        toast({
-            title: 'Error',
-            description: 'Failed to fetch following',
-            variant: 'destructive',
-        });
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch following',
+        variant: 'destructive',
+      });
     }
-};
+  };
 
   useEffect(() => {
     if (!session || !session.user) return;

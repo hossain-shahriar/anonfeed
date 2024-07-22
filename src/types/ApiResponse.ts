@@ -1,5 +1,6 @@
 import { IUser } from '@/model/User';
 import { IFeed } from '../model/Feed';
+import { IComment } from '../model/Comment';
 
 export interface ApiResponse {
     success: boolean;
@@ -14,4 +15,5 @@ export interface ApiResponse {
     isFollowing?: boolean;
     followersCount?: number;
     followingCount?: number;
+    comment?: IComment;
 }
