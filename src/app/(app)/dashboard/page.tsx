@@ -48,6 +48,7 @@ function UserDashboard() {
   const [following, setFollowing] = useState<{ username: string; profilePhoto: string }[]>([]);
   const [showFollowers, setShowFollowers] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
+  const [pendingFollowRequests, setPendingFollowRequests] = useState<{ username: string; profilePhoto: string; }[]>([]);
 
   const { toast } = useToast();
 
@@ -137,6 +138,20 @@ function UserDashboard() {
     [setIsLoading, setFeeds, toast]
   );
 
+  const fetchPendingFollowRequests = useCallback(async () => {
+    try {
+      const response = await axios.get<ApiResponse>('/api/get-pending-follow-requests');
+      console.log('Pending follow requests response:', response.data);
+      setPendingFollowRequests(response.data.pendingFollowRequests || []);
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse>;
+      toast({
+        title: 'Error',
+        description: axiosError.response?.data.message ?? 'Failed to fetch pending follow requests',
+        variant: 'destructive',
+      });
+    }
+  }, [toast]);
 
   const fetchFollowers = async () => {
     try {
@@ -169,7 +184,8 @@ function UserDashboard() {
 
     fetchFeeds();
     fetchAcceptFeeds();
-  }, [session, setValue, toast, fetchAcceptFeeds, fetchFeeds]);
+    fetchPendingFollowRequests();
+  }, [session, setValue, toast, fetchAcceptFeeds, fetchFeeds, fetchPendingFollowRequests]);
 
   // Handle switch change
   const handleSwitchChange = async () => {
@@ -303,6 +319,42 @@ function UserDashboard() {
     open();
   };
 
+  const handleAcceptRequest = async (username: string) => {
+    try {
+      const response = await axios.post<ApiResponse>('/api/accept-follow-request', { username });
+      toast({
+        title: response.data.message,
+        variant: 'default',
+      });
+      fetchPendingFollowRequests(); // Refresh the pending follow requests
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse>;
+      toast({
+        title: 'Error',
+        description: axiosError.response?.data.message ?? 'Failed to accept follow request',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleRejectRequest = async (username: string) => {
+    try {
+      const response = await axios.post<ApiResponse>('/api/reject-follow-request', { username });
+      toast({
+        title: response.data.message,
+        variant: 'default',
+      });
+      fetchPendingFollowRequests(); // Refresh the pending follow requests
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse>;
+      toast({
+        title: 'Error',
+        description: axiosError.response?.data.message ?? 'Failed to reject follow request',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <div className="my-8 mx-4 md:mx-8 lg:mx-auto p-6 bg-white rounded w-full max-w-6xl">
       <div className="relative">
@@ -384,7 +436,7 @@ function UserDashboard() {
                 {followers.map((follower, index) => (
                   <div key={index} className="flex items-center space-x-2 mb-2">
                     <img
-                      src={follower.profilePhoto || '/default-profile.png'}
+                      src={follower.profilePhoto || '/default-avatar.png'}
                       alt={follower.username}
                       className="w-8 h-8 rounded-full"
                     />
@@ -408,7 +460,7 @@ function UserDashboard() {
                 {following.map((follow, index) => (
                   <div key={index} className="flex items-center space-x-2 mb-2">
                     <img
-                      src={follow.profilePhoto || '/default-profile.png'}
+                      src={follow.profilePhoto || '/default-avatar.png'}
                       alt={follow.username}
                       className="w-8 h-8 rounded-full"
                     />
@@ -473,6 +525,32 @@ function UserDashboard() {
         ) : (
           <p>No feeds to display.</p>
         )}
+      </div>
+
+      <div className="mt-8">
+        <h2 className="text-lg font-semibold mb-2">Pending Follow Requests</h2>
+        <div className="space-y-4">
+          {pendingFollowRequests.length > 0 ? (
+            pendingFollowRequests.map((request) => (
+              <div key={request.username} className="flex items-center justify-between p-4 bg-gray-100 rounded-lg">
+                <div className="flex items-center space-x-4">
+                  <img
+                    src={request.profilePhoto || '/default-avatar.png'}
+                    alt={request.username}
+                    className="w-12 h-12 rounded-full"
+                  />
+                  <span>{request.username}</span>
+                </div>
+                <div className="flex space-x-4">
+                  <Button onClick={() => handleAcceptRequest(request.username)}>Accept</Button>
+                  <Button variant="destructive" onClick={() => handleRejectRequest(request.username)}>Reject</Button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p>No pending follow requests</p>
+          )}
+        </div>
       </div>
     </div>
   );

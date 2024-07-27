@@ -16,4 +16,6 @@ export interface ApiResponse {
     followersCount?: number;
     followingCount?: number;
     comment?: IComment;
+    pendingFollowRequests?: Array<IUser>;
+    hasBeenRequested?: boolean;
 }

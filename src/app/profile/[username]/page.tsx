@@ -1,3 +1,4 @@
+// src/app/profile/[username]/page.tsx
 'use client'
 
 import React, { useEffect, useState, useCallback } from 'react';
@@ -15,10 +16,10 @@ import { IComment } from '@/model/Comment';
 import mongoose from 'mongoose';
 
 type PopulatedComment = Omit<IComment, 'user'> & {
-  user: {
-    username: string;
-    profilePhoto: string;
-  };
+    user: {
+        username: string;
+        profilePhoto: string;
+    };
 };
 
 type PopulatedFeed = IFeed & { comments: PopulatedComment[] };
@@ -39,6 +40,7 @@ function UserProfile() {
     const { username } = useParams();
     const { data: session, status } = useSession();
     const router = useRouter();
+    const [hasRequested, setHasRequested] = useState(false);
 
     useEffect(() => {
         if (status === 'unauthenticated') {
@@ -54,13 +56,13 @@ function UserProfile() {
                 const feedsWithComments = response.data.feeds.map((feed: any) => ({
                     ...feed,
                     comments: feed.comments.map((comment: any) => ({
-                      _id: new mongoose.Types.ObjectId(comment._id),
-                      comment: comment.comment,
-                      createdAt: new Date(comment.createdAt),
-                      user: {
-                        username: comment.user.username,
-                        profilePhoto: comment.user.profilePhoto,
-                      },
+                        _id: new mongoose.Types.ObjectId(comment._id),
+                        comment: comment.comment,
+                        createdAt: new Date(comment.createdAt),
+                        user: {
+                            username: comment.user.username,
+                            profilePhoto: comment.user.profilePhoto,
+                        },
                     })),
                 }));
                 setFeeds(feedsWithComments);
@@ -102,6 +104,21 @@ function UserProfile() {
         }
     }, [username, toast]);
 
+    const checkRequestStatus = useCallback(async () => {
+        try {
+            const response = await axios.post<ApiResponse>('/api/has-been-requested', { username });
+            setHasRequested(response.data.hasBeenRequested ?? false);
+        } catch (error) {
+            const axiosError = error as AxiosError<ApiResponse>;
+            toast({
+                title: 'Error',
+                description: axiosError.response?.data.message ?? 'Failed to check follow request status',
+                variant: 'destructive',
+            });
+        }
+    }, [username, toast]);
+
+
     const fetchFollowers = async () => {
         try {
             const response = await axios.get<{ followers: { username: string; profilePhoto: string }[] }>(`/api/show-followers?username=${username}`);
@@ -114,7 +131,7 @@ function UserProfile() {
             });
         }
     };
-    
+
     const fetchFollowing = async () => {
         try {
             const response = await axios.get<{ following: { username: string; profilePhoto: string }[] }>(`/api/show-following?username=${username}`);
@@ -130,10 +147,11 @@ function UserProfile() {
 
     useEffect(() => {
         if (!username) return;
-
         fetchProfileData();
         checkFollowingStatus();
-    }, [username, fetchProfileData, checkFollowingStatus]);
+        checkRequestStatus(); // Add this line
+    }, [username, fetchProfileData, checkFollowingStatus, checkRequestStatus]);
+
 
     const handleFollow = async () => {
         try {
@@ -170,6 +188,17 @@ function UserProfile() {
 
     const isOwnProfile = session?.user?.username === username;
 
+    const baseUrl = `${window.location.protocol}//${window.location.host}`;
+    const profileUrl = `${baseUrl}/u/${username}`;
+
+    const copyToClipboard = () => {
+        navigator.clipboard.writeText(profileUrl);
+        toast({
+            title: 'URL Copied!',
+            description: 'Profile URL has been copied to clipboard.',
+        });
+    };
+
     return (
         <div className="my-8 mx-4 md:mx-8 lg:mx-auto p-6 bg-white rounded w-full max-w-6xl">
             <div className="relative">
@@ -191,7 +220,7 @@ function UserProfile() {
                             className="bg-blue-500 text-white"
                             onClick={isFollowing ? handleUnfollow : handleFollow}
                         >
-                            {isFollowing ? 'Unfollow' : 'Follow'}
+                            {isFollowing ? 'Unfollow' : hasRequested ? 'Requested' : 'Follow'}
                         </Button>
                     </div>
                 )}
@@ -249,6 +278,20 @@ function UserProfile() {
                     </div>
                 </div>
             </div>
+
+            <div className="mt-8">
+                <h2 className="text-lg font-semibold mb-2">Copy This User's Unique Link</h2>
+                <div className="flex items-center">
+                    <input
+                        type="text"
+                        value={profileUrl}
+                        disabled
+                        className="input input-bordered w-full p-2 mr-2"
+                    />
+                    <Button onClick={copyToClipboard}>Copy</Button>
+                </div>
+            </div>
+
             <Button
                 className="mt-4"
                 variant="outline"
