@@ -1,0 +1,25 @@
+sudo docker build -t anonfeed \
+  --build-arg MONGODB_URI="mongodb+srv://mhossai6:794u1kKFABhHlBBC@cluster0.vw3yiv2.mongodb.net/" \
+--build-arg RESEND_API_KEY="re_Srd9qveh_AmikFPf1PxJakCTKG459bC9P" \
+--build-arg NEXTAUTH_SECRET="mosha" \
+--build-arg NODEMAILER_USER="shahriarhossain250@gmail.com" \
+--build-arg NODEMAILER_PASS="fzszgsljfuuxlufw" \
+--build-arg OPENAI_API_KEY="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" \
+--build-arg NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="dhi526htg" \
+--build-arg NEXT_PUBLIC_CLOUDINARY_API_KEY="214119887211184" \
+--build-arg CLOUDINARY_API_SECRET="gFlGn0l3f6vVM-z13xHP1wyyXDM" .
+
+
+
+
+sudo docker run -d -p 3000:3000 \
+  -e MONGODB_URI="mongodb+srv://mhossai6:794u1kKFABhHlBBC@cluster0.vw3yiv2.mongodb.net/" \
+  -e RESEND_API_KEY="re_Srd9qveh_AmikFPf1PxJakCTKG459bC9P" \
+  -e NEXTAUTH_SECRET="mosha" \
+  -e NODEMAILER_USER="shahriarhossain250@gmail.com" \
+  -e NODEMAILER_PASS="fzszgsljfuuxlufw" \
+  -e OPENAI_API_KEY="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" \
+  -e NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="dhi526htg" \
+  -e NEXT_PUBLIC_CLOUDINARY_API_KEY="214119887211184" \
+  -e CLOUDINARY_API_SECRET="gFlGn0l3f6vVM-z13xHP1wyyXDM" \
+  anonfeed
